@@ -2,6 +2,7 @@ package com.algaworks.algashop.billing.domain.model.invoice;
 
 import lombok.AccessLevel;
 import lombok.AllArgsConstructor;
+import lombok.Builder;
 import lombok.EqualsAndHashCode;
 
 import java.math.BigDecimal;
@@ -14,6 +15,7 @@ import lombok.Setter;
 @EqualsAndHashCode
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
 @AllArgsConstructor
+@Builder
 public class LineItem {
 
   private Integer number;
