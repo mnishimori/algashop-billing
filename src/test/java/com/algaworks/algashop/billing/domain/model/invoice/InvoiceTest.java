@@ -13,10 +13,10 @@ import java.util.Set;
 import java.util.UUID;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatExceptionOfType;
 import static org.assertj.core.api.Assertions.assertThatIllegalArgumentException;
 import static org.assertj.core.api.Assertions.assertThatNullPointerException;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
-import static org.assertj.core.api.Assertions.assertThatExceptionOfType;
 
 class InvoiceTest {
 
@@ -48,12 +48,23 @@ class InvoiceTest {
   }
 
   @Test
-  void shouldThrowNullPointerExceptionWhenIssuingWithNullCustomerIdPayerOrItems() {
+  void shouldThrowNullPointerExceptionWhenIssuingWithNullCustomerId() {
     Set<LineItem> items = Set.of(lineItem(1, "Notebook", "10.00"));
 
     assertThatNullPointerException().isThrownBy(() -> Invoice.issue("order-1", null, validPayer(), items));
+  }
+
+  @Test
+  void shouldThrowNullPointerExceptionWhenIssuingWithNullPayer() {
+    Set<LineItem> items = Set.of(lineItem(1, "Notebook", "10.00"));
+
     assertThatNullPointerException().isThrownBy(() -> Invoice.issue("order-1", UUID.randomUUID(), null, items));
-    assertThatNullPointerException().isThrownBy(() -> Invoice.issue("order-1", UUID.randomUUID(), validPayer(), null));
+  }
+
+  @Test
+  void shouldThrowNullPointerExceptionWhenIssuingWithNullItems() {
+    assertThatNullPointerException()
+        .isThrownBy(() -> Invoice.issue("order-1", UUID.randomUUID(), validPayer(), null));
   }
 
   @ParameterizedTest
@@ -180,6 +191,62 @@ class InvoiceTest {
     assertThatThrownBy(() -> invoice.assignPaymentGatewayCode("GW-123"))
         .isInstanceOf(DomainException.class)
         .hasMessageContaining("cannot be edited");
+  }
+
+  @Test
+  void shouldThrowDomainExceptionWhenAssigningGatewayCodeToCanceledInvoice() {
+    Invoice invoice = issuedInvoice();
+    invoice.changePaymentSettings(PaymentMethod.GATEWAY_BALANCE, null);
+    invoice.cancel("reason");
+
+    assertThatThrownBy(() -> invoice.assignPaymentGatewayCode("GW-123"))
+        .isInstanceOf(DomainException.class)
+        .hasMessageContaining("cannot be edited");
+  }
+
+  @Test
+  void shouldThrowNullPointerExceptionWhenAssigningGatewayCodeWithoutPaymentSettings() {
+    Invoice invoice = issuedInvoice();
+
+    assertThatNullPointerException().isThrownBy(() -> invoice.assignPaymentGatewayCode("GW-123"));
+  }
+
+  @Test
+  void shouldThrowDomainExceptionWhenGatewayCodeAlreadyAssignedThroughInvoice() {
+    Invoice invoice = issuedInvoice();
+    invoice.changePaymentSettings(PaymentMethod.GATEWAY_BALANCE, null);
+    invoice.assignPaymentGatewayCode("GW-123");
+
+    assertThatThrownBy(() -> invoice.assignPaymentGatewayCode("GW-456"))
+        .isInstanceOf(DomainException.class)
+        .hasMessage("Gateway code already assigned");
+  }
+
+  @ParameterizedTest
+  @ValueSource(strings = {"", " "})
+  void shouldThrowIllegalArgumentExceptionWhenAssigningBlankGatewayCodeThroughInvoice(String blankCode) {
+    Invoice invoice = issuedInvoice();
+    invoice.changePaymentSettings(PaymentMethod.GATEWAY_BALANCE, null);
+
+    assertThatIllegalArgumentException().isThrownBy(() -> invoice.assignPaymentGatewayCode(blankCode));
+  }
+
+  @Test
+  void shouldThrowNullPointerExceptionWhenChangingToCreditCardWithoutCreditCardId() {
+    Invoice invoice = issuedInvoice();
+
+    assertThatNullPointerException()
+        .isThrownBy(() -> invoice.changePaymentSettings(PaymentMethod.CREDIT_CARD, null));
+    assertThat(invoice.getPaymentSettings()).isNull();
+  }
+
+  @Test
+  void shouldThrowNullPointerExceptionWhenPaymentMethodIsNull() {
+    Invoice invoice = issuedInvoice();
+
+    assertThatNullPointerException()
+        .isThrownBy(() -> invoice.changePaymentSettings(null, UUID.randomUUID()));
+    assertThat(invoice.getPaymentSettings()).isNull();
   }
 
   @Test

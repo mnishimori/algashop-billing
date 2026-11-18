@@ -42,6 +42,16 @@ class PaymentSettingsTest {
   }
 
   @Test
+  void shouldStoreCreditCardIdEvenWhenMethodIsGatewayBalance() {
+    UUID creditCardId = UUID.randomUUID();
+
+    PaymentSettings paymentSettings = PaymentSettings.brandNew(PaymentMethod.GATEWAY_BALANCE, creditCardId);
+
+    assertThat(paymentSettings.getMethod()).isEqualTo(PaymentMethod.GATEWAY_BALANCE);
+    assertThat(paymentSettings.getCreditCardId()).isEqualTo(creditCardId);
+  }
+
+  @Test
   void shouldThrowNullPointerExceptionWhenCreditCardMethodHasNoCreditCardId() {
     assertThatNullPointerException().isThrownBy(() -> PaymentSettings.brandNew(PaymentMethod.CREDIT_CARD, null));
   }

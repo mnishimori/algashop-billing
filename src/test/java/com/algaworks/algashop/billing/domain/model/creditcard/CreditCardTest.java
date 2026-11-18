@@ -63,6 +63,18 @@ class CreditCardTest {
         .isThrownBy(() -> CreditCard.brandNew(UUID.randomUUID(), "1234", blankValue, 12, 2030, "GW-CARD-1"));
   }
 
+  @Test
+  void shouldThrowIllegalArgumentExceptionWhenLastNumbersIsNull() {
+    assertThatIllegalArgumentException()
+        .isThrownBy(() -> CreditCard.brandNew(UUID.randomUUID(), null, "VISA", 12, 2030, "GW-CARD-1"));
+  }
+
+  @Test
+  void shouldThrowIllegalArgumentExceptionWhenBrandIsNull() {
+    assertThatIllegalArgumentException()
+        .isThrownBy(() -> CreditCard.brandNew(UUID.randomUUID(), "1234", null, 12, 2030, "GW-CARD-1"));
+  }
+
   @ParameterizedTest
   @ValueSource(strings = {"", " "})
   void shouldThrowIllegalArgumentExceptionWhenGatewayCodeIsBlankOnCreation(String blankValue) {
