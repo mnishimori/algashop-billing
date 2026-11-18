@@ -3,17 +3,28 @@ package com.algaworks.algashop.billing.domain.model.invoice;
 import com.algaworks.algashop.billing.domain.model.DomainException;
 import com.algaworks.algashop.billing.domain.model.IdGenerator;
 import io.micrometer.common.util.StringUtils;
+import jakarta.persistence.CascadeType;
+import jakarta.persistence.CollectionTable;
+import jakarta.persistence.ElementCollection;
+import jakarta.persistence.Embedded;
+import jakarta.persistence.Entity;
+import jakarta.persistence.EnumType;
+import jakarta.persistence.Enumerated;
+import jakarta.persistence.FetchType;
+import jakarta.persistence.Id;
+import jakarta.persistence.JoinColumn;
+import jakarta.persistence.OneToOne;
+import jakarta.persistence.OrderColumn;
+import java.math.BigDecimal;
+import java.time.OffsetDateTime;
 import java.util.Collections;
+import java.util.HashSet;
 import java.util.Objects;
+import java.util.Set;
+import java.util.UUID;
 import lombok.AccessLevel;
 import lombok.AllArgsConstructor;
 import lombok.EqualsAndHashCode;
-
-import java.math.BigDecimal;
-import java.time.OffsetDateTime;
-import java.util.HashSet;
-import java.util.Set;
-import java.util.UUID;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
@@ -23,8 +34,10 @@ import lombok.Setter;
 @EqualsAndHashCode(onlyExplicitlyIncluded = true)
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
 @AllArgsConstructor(access = AccessLevel.PROTECTED)
+@Entity
 public class Invoice {
 
+  @Id
   @EqualsAndHashCode.Include
   private UUID id;
   private String orderId;
@@ -34,9 +47,15 @@ public class Invoice {
   private OffsetDateTime canceledAt;
   private OffsetDateTime expiresAt;
   private BigDecimal totalAmount;
+  @Enumerated(EnumType.STRING)
   private InvoiceStatus status;
+  @OneToOne(cascade = CascadeType.ALL, fetch = FetchType.EAGER, orphanRemoval = true)
   private PaymentSettings paymentSettings;
+  @ElementCollection
+  @CollectionTable(name = "invoice_line_items", joinColumns = @JoinColumn(name = "invoice_id"))
+  @OrderColumn(name = "item_index")
   private Set<LineItem> items = new HashSet<>();
+  @Embedded
   private Payer payer;
   private String cancelReason;
 
@@ -102,7 +121,8 @@ public class Invoice {
       throw new DomainException(String.format("Invoice %s with status %s cannot be edited",
           this.getId(), this.getStatus().toString().toLowerCase()));
     }
-    PaymentSettings paymentSettings = PaymentSettings.brandNew(method, creditCardId);
+    var paymentSettings = PaymentSettings.brandNew(method, creditCardId);
+    paymentSettings.setInvoice(this);
     this.setPaymentSettings(paymentSettings);
   }
 }
