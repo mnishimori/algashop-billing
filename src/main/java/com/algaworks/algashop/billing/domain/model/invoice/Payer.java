@@ -3,19 +3,15 @@ package com.algaworks.algashop.billing.domain.model.invoice;
 import com.algaworks.algashop.billing.domain.model.FieldValidations;
 import jakarta.persistence.Embeddable;
 import jakarta.persistence.Embedded;
-import java.util.Objects;
-import lombok.AccessLevel;
-import lombok.Builder;
-import lombok.EqualsAndHashCode;
-import lombok.Getter;
-import lombok.NoArgsConstructor;
-import lombok.Setter;
+import lombok.*;
 
-@Embeddable
+import java.util.Objects;
+
 @Getter
 @Setter(AccessLevel.PRIVATE)
 @EqualsAndHashCode
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
+@Embeddable
 public class Payer {
 
   private String fullName;
